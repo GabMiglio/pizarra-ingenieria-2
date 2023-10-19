@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizarra en Línea</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
+        .canvas-container {
+            background-color: rgb(18, 107, 37);
+            margin: 20px auto;
+            border: 2px solid #000;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        button, input {
+            font-size: 16px;
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    <div class="controls">
+        <button id="clear-button">Limpiar</button>
+        <input type="color" id="color-picker" value="#000000">
+    </div>
+    <!-- <script src="script.js"></script> -->
+    <script>
+        // Conexión WebSocket con el backend
+        const ws = new WebSocket('ws://192.168.0.51:3001');
+        
+        // Manejar la apertura de la conexión WebSocket
+        function isOpen(ws) { return ws.readyState === ws.OPEN }
+        if (!isOpen(ws)) {
+            ws.addEventListener('open', (event) => {
+                console.log('Conexión WebSocket abierta');
+            });
+
+            // Manejar los mensajes WebSocket entrantes (opcional)
+            ws.addEventListener('message', (event) => {
+                console.log(`Mensaje recibido del servidor: ${event.data}`);
+            });
+        };
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const clearButton = document.getElementById('clear-button');
+        const colorPicker = document.getElementById('color-picker');
+
+        let drawing = false;
+
+        canvas.width = window.innerWidth - 40;
+        canvas.height = 400;
+
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = colorPicker.value;
+
+        function startDrawing(e) {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            drawing = false;
+            ctx.closePath();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        clearButton.addEventListener('click', clearCanvas);
+        colorPicker.addEventListener('input', (e) => {
+            ctx.strokeStyle = e.target.value;
+        });
+    </script>
+</body>
+
+</html>
